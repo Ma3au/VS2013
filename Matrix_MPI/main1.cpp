@@ -32,7 +32,7 @@ double random(const int min, const int max)
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "RUS");
-	const int size = 10;
+	const int size = 100;
 
 	int size_proc, rank;
 	MPI_Status status;
@@ -42,20 +42,22 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &size_proc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	const int num_iter = 2;
+	const int num_iter = 20;
 	int	first_iter = rank * num_iter;
 	int	last_iter = first_iter + num_iter;
 
-	double t = clock();
 
 	double matrix[size][size];
 	double B[size];
 	double E[size][size];
-	double segment[num_iter][size];
+
+	double segmentM[num_iter];
+	double segmentE[num_iter];
+
 	double mini_segmentM[num_iter];
 	double mini_segmentE[num_iter];
 
-	double div;
+	double div, multi;
 	//	 Заполняем матрицу коэффициентов и B
 	if (rank == 0){
 		for (int i = 0; i < size; i++)
@@ -66,14 +68,14 @@ int main(int argc, char* argv[])
 				else E[i][j] = 0.0;
 			}
 			B[i] = random(0, 100);
-		}
+		}/*
 		cout << "MY MATRIX!!!!\n";
 		for (int i = 0; i < size; i++){
-			for (int j = 0; j < size; j++){
-				cout << matrix[i][j] << ' ';
-			}
-			cout << endl;
+		for (int j = 0; j < size; j++){
+		cout << matrix[i][j] << ' ';
 		}
+		cout << endl;
+		}*/
 	}
 	/*
 	MPI_Scatter(matrix, num_iter * size, MPI_DOUBLE, segment, num_iter*size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -90,77 +92,126 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	}
-	*/
+
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	for (int i = 0; i < size; i++){
-		MPI_Scatter(matrix[i], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		//if (rank != 0){
-		for (int k = 0; k < size_proc; k++){
-			if (rank == k){
-				for (int j = 0; j < num_iter; j++){
-					cout << mini_segmentM[j] << "   ";
-				}
-			}
-		}
-		cout << endl;
-		MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Scatter(matrix[i], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	//if (rank != 0){
+	for (int k = 0; k < size_proc; k++){
+	if (rank == k){
+	for (int j = 0; j < num_iter; j++){
+	cout << mini_segmentM[j] << "   ";
+	}
+	}
+	}
+	cout << endl;
+	MPI_Barrier(MPI_COMM_WORLD);
 	}
 
+	*/
+
+	//
+	//	MPI_Barrier(MPI_COMM_WORLD);
+	//
+	//	out_matrix(matrix, B);
+	//
+	//	double t = clock();
+	//
+	//
+	//
+	//
+	double t = clock();
+	//	 Вычисление обратной матрицы
+
+	//	Трансформация исходной матрицы в верхнетреугольную
+	int k = 0;
+	for (k = 0; k < size; k++)
+	{
+		if (rank == 0)
+		{
+			if (matrix[k][k] == 0){
+				bool changed = false;
+				for (int i = k + 1; i < size; i++){
+					if (matrix[i][k] != 0){
+						swap(matrix[k], matrix[i]);
+						swap(E[k], E[i]);
+						changed = true;
+						break;
+					}
+				}
+				if (!changed)
+					return -1;
+			}
+			div = matrix[k][k];
+		}
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Scatter(matrix[k], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Scatter(E[k], num_iter, MPI_DOUBLE, mini_segmentE, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&div, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+		for (int j = 0; j < num_iter; j++){
+			mini_segmentM[j] /= div;
+			mini_segmentE[j] /= div;
+		}
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Gather(mini_segmentM, num_iter, MPI_DOUBLE, matrix[k], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Gather(mini_segmentE, num_iter, MPI_DOUBLE, E[k], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+
+		for (int i = k + 1; i < size; i++){
+			if (rank == 0)
+				multi = matrix[i][k];
+			MPI_Bcast(&multi, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+			MPI_Scatter(matrix[i], num_iter, MPI_DOUBLE, segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Scatter(E[i], num_iter, MPI_DOUBLE, segmentE, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			for (int j = 0; j < num_iter; j++){
+				segmentM[j] -= multi * mini_segmentM[j];
+				segmentE[j] -= multi * mini_segmentE[j];
+			}
+			MPI_Gather(segmentM, num_iter, MPI_DOUBLE, matrix[i], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Gather(segmentE, num_iter, MPI_DOUBLE, E[i], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		}
+	}
+
+	for (int k = size - 1; k > 0; k--){
+		MPI_Scatter(matrix[k], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Scatter(E[k], num_iter, MPI_DOUBLE, mini_segmentE, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		for (int i = k - 1; i > -1; i--){
+			if (rank == 0)
+				multi = matrix[i][k];
+			MPI_Bcast(&multi, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+			MPI_Scatter(matrix[i], num_iter, MPI_DOUBLE, segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Scatter(E[i], num_iter, MPI_DOUBLE, segmentE, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			for (int j = 0; j < num_iter; j++){
+				segmentM[j] -= multi * mini_segmentM[j];
+				segmentE[j] -= multi * mini_segmentE[j];
+			}
+			MPI_Gather(segmentM, num_iter, MPI_DOUBLE, matrix[i], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Gather(segmentE, num_iter, MPI_DOUBLE, E[i], num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		}
+	}
+
+
+	if (rank == 0){
+		cout << "MY MATRIX!!!!\n";
+		for (int i = 0; i < size; i++){
+			for (int j = 0; j < size; j++){
+				cout << matrix[i][j] << ' ';
+			}
+			cout << '\n';
+		}
+		t = (clock() - t) / 1000;
+		cout << "\n\nThe time spent on computation: " << t << "s.";
+	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 	return 0;
 }
-
-//
-//	MPI_Barrier(MPI_COMM_WORLD);
-//
-//	out_matrix(matrix, B);
-//
-//	double t = clock();
-//
-//
-//
-//
-//	 Вычисление обратной матрицы
-//
-//	Трансформация исходной матрицы в верхнетреугольную
-//int k = 0;
-//	for (int k = 0; k < size; k++)
-//	{
-//		if (rank == 0)
-//		{
-//			if (matrix[k][k] == 0){
-//				bool changed = false;
-//				for (int i = k + 1; i < size; i++){
-//					if (matrix[i][k] != 0){
-//						swap(matrix[k], matrix[i]);
-//						swap(E[k], E[i]);
-//						changed = true;
-//						break;
-//					}
-//				}
-//				if (!changed)
-//					return -1;
-//			}
-//			double div = matrix[k][k];
-//		}
-//		MPI_Barrier(MPI_COMM_WORLD);
-//		MPI_Scatter(matrix[k], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//		MPI_Scatter(E[k], num_iter, MPI_DOUBLE, mini_segmentE, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//		MPI_Bcast(&div, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//
-//		if (rank != 0){
-//			for (int j = 0; j < num_iter; j++){
-//				mini_segmentM[j] /= div;
-//				mini_segmentE[j] /= div;
-//			}
-//		}
-//		MPI_Barrier(MPI_COMM_WORLD);
-//		MPI_Gather(mini_segmentM, num_iter, MPI_DOUBLE, matrix, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//		MPI_Gather(mini_segmentE, num_iter, MPI_DOUBLE, E, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//
-//	}
 //	MPI_Barrier(MPI_COMM_WORLD);
 //	cout << endl << endl << endl;
 //	if (rank == 0){
@@ -197,16 +248,7 @@ int main(int argc, char* argv[])
 //		
 //		Формирование единичной матрицы из исходной
 //		и обратной из единичной
-//		for (int k = size - 1; k > 0; k--){
-//			for (int i = k - 1; i > -1; i--){
-//				double multi = matrix[i][k];
-//	
-//				for (int j = 0; j < size; j++){
-//					matrix[i][j] -= multi * matrix[k][j];
-//					E[i][j] -= multi * E[k][j];
-//				}
-//			}
-//		}
+
 //	
 //	
 //	
