@@ -32,7 +32,7 @@ double random(const int min, const int max)
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "RUS");
-	const int size = 200;
+	const int size = 5;
 
 	int size_proc, rank;
 	MPI_Status status;
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &size_proc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	const int num_iter = 40;
+	const int num_iter = 1;
 	int	first_iter = rank * num_iter;
 	int	last_iter = first_iter + num_iter;
 
@@ -70,76 +70,16 @@ int main(int argc, char* argv[])
 			}
 			B[i] = random(0, 100);
 		}
-		/*cout << "MY MATRIX!!!!\n";
+		cout << "MY MATRIX!!!!\n";
 		for (int i = 0; i < size; i++){
-		for (int j = 0; j < size; j++){
-		cout << matrix[i][j] << ' ';
+			for (int j = 0; j < size; j++){
+				cout << matrix[i][j] << ' ';
+			}
+			cout << " = " << B[i];
+			cout << endl;
 		}
-		cout << endl;
-		}*/
 	}
 
-	MPI_Scatter(matrix, num_iter * size, MPI_DOUBLE, segmentM, num_iter * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	//MPI_Scatter(E, num_iter * size, MPI_DOUBLE, segmentE, num_iter * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	//for (int k = 0; k < size_proc; k++){
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//int k = 4;
-	//if (k == rank){
-	//	cout << "NUM PROC: " << k << endl;
-	//	for (int i = 0; i < num_iter; i++){
-	//		for (int j = 0; j < size; j++){
-	//			cout << segmentM[i][j] << " ";
-	//		}
-	//		cout << '\n';
-	//	}
-	//	//cout << endl;
-	//}
-	//}
-
-	/*
-	MPI_Scatter(matrix, num_iter * size, MPI_DOUBLE, segment, num_iter*size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	for (int i = 1; i < size_proc; i++){
-	if (rank == i){
-	cout << "Proc num:" << rank << '\n';
-	for (int i = 0; i < num_iter; i++){
-	for (int j = 0; j < size; j++){
-	cout << segment[i][j] << ' ';
-	}
-	cout << '\n';
-	}
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	}
-
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	for (int i = 0; i < size; i++){
-	MPI_Scatter(matrix[i], num_iter, MPI_DOUBLE, mini_segmentM, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	//if (rank != 0){
-	for (int k = 0; k < size_proc; k++){
-	if (rank == k){
-	for (int j = 0; j < num_iter; j++){
-	cout << mini_segmentM[j] << "   ";
-	}
-	}
-	}
-	cout << endl;
-	MPI_Barrier(MPI_COMM_WORLD);
-	}
-
-	*/
-
-	//
-	//	MPI_Barrier(MPI_COMM_WORLD);
-	//
-	//	out_matrix(matrix, B);
-	//
-	//	double t = clock();
-	//
-	//
-	//
-	//
 	double t = clock();
 	//	 Вычисление обратной матрицы
 
@@ -149,7 +89,7 @@ int main(int argc, char* argv[])
 	{
 		if (rank == 0)
 		{
-			if (matrix[k][k] == 0){
+			if (matrix[k][k] == 0.0){
 				bool changed = false;
 				for (int i = k + 1; i < size; i++){
 					if (matrix[i][k] != 0){
@@ -205,7 +145,7 @@ int main(int argc, char* argv[])
 		MPI_Gather(segmentE, size * num_iter, MPI_DOUBLE, E, size * num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	}
 
-	for (int k = size - 1; k > 0; k--){
+	for (k = size - 1; k > 0; k--){
 		if (rank == 0)
 			for (int i = 0; i < size; i++)
 				segmentK[i] = matrix[k][i];
@@ -228,16 +168,38 @@ int main(int argc, char* argv[])
 		MPI_Gather(segmentM, size * num_iter, MPI_DOUBLE, matrix, size * num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Gather(segmentE, size * num_iter, MPI_DOUBLE, E, size * num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	}
+	if (rank == 0){
+		for (int i = 0; i < size; i++){
+			for (int j = 0; j < size; j++){
+			cout << E[i][j] << ' ';
+			}
+			cout << '\n';
+		}
+	}
+	double X[size];
+	double segmentX[num_iter];
+
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Bcast(B, size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Scatter(E, num_iter * size, MPI_DOUBLE, segmentE, num_iter * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+
+	for (int i = 0; i < num_iter; i++){
+		segmentX[i] = 0;
+		for (int j = 0; j < size; j++)
+			segmentX[i] += segmentE[i][j] * B[j];
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Gather(segmentX, num_iter, MPI_DOUBLE, X, num_iter, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
 	if (rank == 0){
-		//cout << "MY MATRIX!!!!\n";
-		//for (int i = 0; i < size; i++){
-		//for (int j = 0; j < size; j++){
-		//cout << matrix[i][j] << ' ';
-		//}
-		//cout << '\n';
-		//}
+		cout << "\nthe system of equations:";
+		for (int i = 0; i < size; i++)
+			cout << "\nx" << i + 1 << " = " << X[i];
+
 		t = (clock() - t) / 1000;
 		cout << "\n\nThe time spent on computation: " << t << "s.";
 	}

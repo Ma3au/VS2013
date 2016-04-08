@@ -32,7 +32,7 @@
 //int main(int argc, char* argv[])
 //{
 //	setlocale(LC_ALL, "RUS");
-//	const int size = 250;
+//	const int size = 200;
 //
 //	vector<vector<double> > matrix(size, vector<double>(size));
 //	vector<double> B(size);
@@ -50,7 +50,7 @@
 //
 //
 //
-//	/*
+//	
 //	// Вычисление обратной матрицы
 //
 //	// Создание и заполнение единичной матрицы
@@ -117,7 +117,7 @@
 //
 //	matrix = E;
 //
-//	*/
+//	
 //	// Матрица-столбец неизвестных X и вычисление окончательного результата
 //
 //	vector<double> X(size);
