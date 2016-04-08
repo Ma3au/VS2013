@@ -5,8 +5,6 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Matrix_MPI", "Matrix_MPI\Matrix_MPI.vcxproj", "{AEE9278E-735B-43E5-8C42-4E001210A1B9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj", "{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -29,16 +27,6 @@ Global
 		{AEE9278E-735B-43E5-8C42-4E001210A1B9}.Release|Win32.Build.0 = Release|Win32
 		{AEE9278E-735B-43E5-8C42-4E001210A1B9}.Release|x64.ActiveCfg = Release|x64
 		{AEE9278E-735B-43E5-8C42-4E001210A1B9}.Release|x64.Build.0 = Release|x64
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Debug|Win32.Build.0 = Debug|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Debug|x64.ActiveCfg = Debug|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Release|Win32.ActiveCfg = Release|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Release|Win32.Build.0 = Release|Win32
-		{E2BD36B8-448D-40AD-9EA4-534E1F5F58A4}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

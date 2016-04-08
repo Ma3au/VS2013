@@ -152,11 +152,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="example1.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="main1.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="test.cpp" />
     <ClCompile Include="without_mpi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
